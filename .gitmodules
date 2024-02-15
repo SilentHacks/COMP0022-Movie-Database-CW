@@ -1,3 +1,6 @@
 [submodule "backend"]
 	path = backend
 	url = git@github.com:SilentHacks/COMP0022-backend.git
+[submodule "frontend"]
+	path = frontend
+	url = git@github.com:SilentHacks/COMP0022-frontend.git
