@@ -1,15 +1,38 @@
 version: '3.8'
 
 services:
+  traefik:
+    image: traefik:v2.11
+    container_name: comp0022_traefik
+    command:
+      - "--api.insecure=true" # Enables the dashboard on an insecure endpoint (for development only)
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false" # Only expose services explicitly
+      - "--entryPoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080" # Traefik dashboard
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - internal_network
+
   api:
     build: ./backend
     container_name: comp0022_fastapi
     env_file:
       - .env
-    ports:
-      - "8000:8000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`localhost`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.middlewares.strip-prefix.stripprefix.prefixes=/api/v1"
+      - "traefik.http.routers.api.middlewares=strip-prefix"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --proxy-headers --port 8000 --root-path /api/v1
     depends_on:
       - db
+    ports:
+      - "8000:8000"
     networks:
       - internal_network
 
@@ -26,6 +49,10 @@ services:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
     restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web-app.rule=Host(`localhost`)"
+      - "traefik.http.services.web-app.loadbalancer.server.port=3000"
     ports:
       - "3000:3000"
     networks:
