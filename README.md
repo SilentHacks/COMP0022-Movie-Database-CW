@@ -69,7 +69,7 @@ This section outlines the steps to get the project up and running on your local 
 1. **Clone the repository** with submodules:
 
    ```bash
-   git clone --recurse-submodules <repository-url>
+   git clone --recurse-submodules https://github.com/SilentHacks/COMP0022-Movie-Database-CW.git
     ```
    
 2. **Navigate to the project directory**:
