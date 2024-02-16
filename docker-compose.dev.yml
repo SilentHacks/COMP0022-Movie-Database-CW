@@ -76,7 +76,7 @@ services:
     container_name: comp0022_postgres_master
     restart: always
     ports:
-      - '5432:5432'
+      - "5432"
     networks:
       - internal_network
     volumes:
@@ -97,7 +97,7 @@ services:
     container_name: comp0022_postgres_slave
     restart: always
     ports:
-      - '5432'
+      - "5432"
     networks:
       - internal_network
     depends_on:
@@ -111,6 +111,26 @@ services:
       - POSTGRESQL_REPLICATION_USER=${POSTGRES_REPLICATION_USER}
       - POSTGRESQL_REPLICATION_PASSWORD=${POSTGRES_REPLICATION_PASSWORD}
       - POSTGRESQL_MASTER_PORT_NUMBER=5432
+
+  pgpool:
+    image: bitnami/pgpool:4
+    ports:
+      - "5432:5432"
+    networks:
+      - internal_network
+    depends_on:
+      - db-master
+      - db-slave
+    environment:
+      - PGPOOL_BACKEND_NODES=0:db-master:5432:4:primary:ALWAYS_PRIMARY,1:db-slave:5432:6:replica
+      - PGPOOL_POSTGRES_USERNAME=${POSTGRES_USER}
+      - PGPOOL_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGPOOL_ADMIN_USERNAME=${PGPOOL_ADMIN_USERNAME}
+      - PGPOOL_ADMIN_PASSWORD=${PGPOOL_ADMIN_PASSWORD}
+      - PGPOOL_ENABLE_LOAD_BALANCING=yes
+      - PGPOOL_ENABLE_STATEMENT_LOAD_BALANCING=yes
+      - PGPOOL_SR_CHECK_USER=${POSTGRES_USER}
+      - PGPOOL_SR_CHECK_PASSWORD=${POSTGRES_PASSWORD}
 
 volumes:
   db-data:
