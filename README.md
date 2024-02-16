@@ -63,6 +63,7 @@ This section outlines the steps to get the project up and running on your local 
 
 - **Docker**: Ensure you have Docker installed on your machine. If not, you can download and install Docker Desktop from the official website: [Docker Desktop](https://www.docker.com/products/docker-desktop)
 - **Git**: You will need Git to clone the repository and its submodules. If you don't have Git installed, you can download and install it from the official website: [Git](https://git-scm.com/downloads)
+- (Optional) **mkcert**: If you want to use HTTPS locally, you can use mkcert to generate a local CA and certificates for your local development environment. You can download and install mkcert by following the instructions from their repo: [mkcert](https://github.com/FiloSottile/mkcert)
 
 ### Installation
 
@@ -81,7 +82,15 @@ This section outlines the steps to get the project up and running on your local 
    - Create a `.env` file in the root directory based on the `.env.example` file.
    - Update the environment variables in the `.env` file to match your local environment.
 
-4. **Start the application** using Docker Compose:
+4. **Set up SSL certificates** (Optional):
+    - If you want to use HTTPS locally, you can generate SSL certificates using mkcert. Run the following commands to generate the certificates:
+      ```bash
+      mkcert -install
+      cd ./traefik
+      mkcert -key-file ./localhost.key -cert-file ./localhost.crt localhost
+      ```
+
+5**Start the application** using Docker Compose:
    ```bash
    docker-compose up --build
    ```

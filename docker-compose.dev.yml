@@ -4,16 +4,27 @@ services:
   traefik:
     image: traefik:v2.11
     container_name: comp0022_traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik=true"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
     command:
       - "--api.insecure=true" # Enables the dashboard on an insecure endpoint (for development only)
+      - "--api.dashboard=true" # Enables the dashboard
       - "--providers.docker=true"
       - "--providers.docker.exposedByDefault=false" # Only expose services explicitly
+      - "--providers.file.filename=/traefik/dynamic.yml" # Load dynamic configuration from a file
       - "--entryPoints.web.address=:80"
+      - "--entryPoints.websecure.address=:443"
+      - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
     ports:
       - "80:80"
+      - "443:443"
       - "8080:8080" # Traefik dashboard
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./traefik:/traefik/"
     networks:
       - internal_network
 
@@ -25,6 +36,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`localhost`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.api.tls=true"
       - "traefik.http.middlewares.strip-prefix.stripprefix.prefixes=/api/v1"
       - "traefik.http.routers.api.middlewares=strip-prefix"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
@@ -52,6 +64,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.web-app.rule=Host(`localhost`)"
+      - "traefik.http.routers.web-app.tls=true"
       - "traefik.http.services.web-app.loadbalancer.server.port=3000"
     ports:
       - "3000:3000"
