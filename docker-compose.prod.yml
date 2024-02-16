@@ -70,16 +70,42 @@ services:
     networks:
       - internal_network
 
-  db:
-    image: postgres:latest
-    container_name: comp0022_postgres
-    volumes:
-      - db-data:/var/lib/postgresql/data
-      - ./db/scripts:/docker-entrypoint-initdb.d
-    env_file:
-      - .env
+  db-master:
+    image: bitnami/postgresql:16
+    container_name: comp0022_postgres_master
+    restart: always
+    ports:
+      - '5432:5432'
     networks:
       - internal_network
+    volumes:
+      - db-data:/bitnami/postgresql
+      - ./db/scripts:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRESQL_REPLICATION_MODE=master
+      - POSTGRESQL_REPLICATION_USER=${POSTGRES_REPLICATION_USER}
+      - POSTGRESQL_REPLICATION_PASSWORD=${POSTGRES_REPLICATION_PASSWORD}
+      - POSTGRESQL_USERNAME=${POSTGRES_USER}
+      - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRESQL_DATABASE=${POSTGRES_DB}
+
+  db-slave:
+    image: bitnami/postgresql:16
+    container_name: comp0022_postgres_slave
+    restart: always
+    ports:
+      - '5432'
+    networks:
+      - internal_network
+    depends_on:
+      - db-master
+    environment:
+      - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRESQL_MASTER_HOST=db-master
+      - POSTGRESQL_REPLICATION_MODE=slave
+      - POSTGRESQL_REPLICATION_USER=${POSTGRES_REPLICATION_USER}
+      - POSTGRESQL_REPLICATION_PASSWORD=${POSTGRES_REPLICATION_PASSWORD}
+      - POSTGRESQL_MASTER_PORT_NUMBER=5432
 
 volumes:
   db-data:
