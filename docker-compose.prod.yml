@@ -45,7 +45,7 @@ services:
       - "traefik.http.services.api.loadbalancer.server.port=8000"
     command: uvicorn app.main:app --host 0.0.0.0 --proxy-headers --port 8000 --root-path /api/v1
     depends_on:
-      - db
+      - pg-0
     networks:
       - internal_network
 
@@ -70,42 +70,64 @@ services:
     networks:
       - internal_network
 
-  db-master:
-    image: bitnami/postgresql:16
-    container_name: comp0022_postgres_master
+  pg-0:
+    image: bitnami/postgresql-repmgr:16
+    container_name: comp0022_postgres_0
     restart: always
-    ports:
-      - '5432:5432'
     networks:
       - internal_network
     volumes:
       - db-data:/bitnami/postgresql
       - ./db/scripts:/docker-entrypoint-initdb.d
     environment:
-      - POSTGRESQL_REPLICATION_MODE=master
-      - POSTGRESQL_REPLICATION_USER=${POSTGRES_REPLICATION_USER}
-      - POSTGRESQL_REPLICATION_PASSWORD=${POSTGRES_REPLICATION_PASSWORD}
-      - POSTGRESQL_USERNAME=${POSTGRES_USER}
-      - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRESQL_DATABASE=${POSTGRES_DB}
+      - POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME}
+      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+      - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
+      - REPMGR_PRIMARY_HOST=pg-0
+      - REPMGR_PARTNER_NODES=pg-1,pg-0
+      - REPMGR_NODE_NAME=pg-0
+      - REPMGR_NODE_NETWORK_NAME=pg-0
+      - REPMGR_USERNAME=${REPMGR_USERNAME}
+      - REPMGR_PASSWORD=${REPMGR_PASSWORD}
 
-  db-slave:
-    image: bitnami/postgresql:16
-    container_name: comp0022_postgres_slave
+  pg-1:
+    image: bitnami/postgresql-repmgr:16
+    container_name: comp0022_postgres_1
     restart: always
-    ports:
-      - '5432'
     networks:
       - internal_network
     depends_on:
-      - db-master
+      - pg-0
     environment:
-      - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRESQL_MASTER_HOST=db-master
-      - POSTGRESQL_REPLICATION_MODE=slave
-      - POSTGRESQL_REPLICATION_USER=${POSTGRES_REPLICATION_USER}
-      - POSTGRESQL_REPLICATION_PASSWORD=${POSTGRES_REPLICATION_PASSWORD}
-      - POSTGRESQL_MASTER_PORT_NUMBER=5432
+      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+      - POSTGRESQL_MASTER_HOST=pg-0
+      - REPMGR_PRIMARY_HOST=pg-0
+      - REPMGR_PARTNER_NODES=pg-0,pg-1
+      - REPMGR_NODE_NAME=pg-1
+      - REPMGR_NODE_NETWORK_NAME=pg-1
+      - REPMGR_USERNAME=${REPMGR_USERNAME}
+      - REPMGR_PASSWORD=${REPMGR_PASSWORD}
+
+  pgpool:
+    image: bitnami/pgpool:4
+    networks:
+      - internal_network
+    depends_on:
+      - pg-0
+      - pg-1
+    environment:
+      - PGPOOL_BACKEND_NODES=0:pg-0:5432:4:primary:ALWAYS_PRIMARY,1:pg-1:5432:6:replica
+      - PGPOOL_POSTGRES_USERNAME=${POSTGRESQL_USER}
+      - PGPOOL_POSTGRES_PASSWORD=${POSTGRESQL_PASSWORD}
+      - PGPOOL_ADMIN_USERNAME=${PGPOOL_ADMIN_USERNAME}
+      - PGPOOL_ADMIN_PASSWORD=${PGPOOL_ADMIN_PASSWORD}
+      - PGPOOL_ENABLE_LOAD_BALANCING=yes
+      - PGPOOL_ENABLE_STATEMENT_LOAD_BALANCING=yes
+      - PGPOOL_SR_CHECK_USER=${REPMGR_USERNAME}
+      - PGPOOL_SR_CHECK_PASSWORD=${REPMGR_PASSWORD}
+      - PGPOOL_ENABLE_WATCHDOG=yes
+      - PGPOOL_ENABLE_QUERY_CACHE=yes
+      - PGPOOL_ENABLE_LDAP=no
 
 volumes:
   db-data:
