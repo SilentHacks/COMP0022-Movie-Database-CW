@@ -3,7 +3,6 @@ version: '3.8'
 services:
   traefik:
     image: traefik:v2.11
-    container_name: comp0022_traefik
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik=true"
@@ -16,24 +15,24 @@ services:
       - "--entryPoints.web.address=:80"
       - "--entryPoints.websecure.address=:443"
       - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
-      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
-      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.myresolver.acme.email=your-email@example.com"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--providers.file.filename=/traefik/dynamic.yml" # Load dynamic configuration from a file
+#      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+#      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+#      - "--certificatesresolvers.myresolver.acme.email=your-email@example.com"
+#      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
       - "443:443"
       - "8080:8080" # Traefik dashboard
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "./letsencrypt:/letsencrypt"
+      - "./traefik:/traefik/"
     networks:
       - internal_network
       - external_network
 
   api:
-    build: ./backend
-    container_name: comp0022_fastapi
+    image: comp0022_fastapi
     env_file:
       - .env
     labels:
@@ -50,37 +49,28 @@ services:
       - internal_network
 
   web-app:
-    container_name: comp0022_next_app
-    build:
-      context: ./frontend
-      dockerfile: dev.Dockerfile
-    depends_on:
-      - api
+    image: comp0022_next_app
     env_file:
       - .env
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
-    restart: always
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.web-app.rule=Host(`localhost`)"
-      - "traefik.http.routers.api.tls=true"
+      - "traefik.http.routers.web-app.tls=true"
       - "traefik.http.services.web-app.loadbalancer.server.port=3000"
     networks:
       - internal_network
 
   pg-0:
     image: bitnami/postgresql-repmgr:16
-    container_name: comp0022_postgres_0
-    restart: always
     networks:
       - internal_network
     volumes:
       - db-data:/bitnami/postgresql
       - ./db/scripts:/docker-entrypoint-initdb.d
     environment:
-      - POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME}
       - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
       - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
       - REPMGR_PRIMARY_HOST=pg-0
@@ -92,8 +82,6 @@ services:
 
   pg-1:
     image: bitnami/postgresql-repmgr:16
-    container_name: comp0022_postgres_1
-    restart: always
     networks:
       - internal_network
     depends_on:
@@ -117,7 +105,6 @@ services:
       - pg-1
     environment:
       - PGPOOL_BACKEND_NODES=0:pg-0:5432:4:primary:ALWAYS_PRIMARY,1:pg-1:5432:6:replica
-      - PGPOOL_POSTGRES_USERNAME=${POSTGRESQL_USER}
       - PGPOOL_POSTGRES_PASSWORD=${POSTGRESQL_PASSWORD}
       - PGPOOL_ADMIN_USERNAME=${PGPOOL_ADMIN_USERNAME}
       - PGPOOL_ADMIN_PASSWORD=${PGPOOL_ADMIN_PASSWORD}
@@ -134,6 +121,6 @@ volumes:
 
 networks:
   internal_network:
-    driver: bridge
+    driver: overlay
   external_network:
-    name: web_gateway
+    driver: overlay
