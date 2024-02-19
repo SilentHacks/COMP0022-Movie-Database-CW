@@ -108,6 +108,8 @@ This section outlines the steps to get the project up and running on your local 
     
 6. If you want to run it in **production mode**:
    ```bash
+   docker build -t comp0022_next_app -f prod.Dockerfile ./frontend
+   docker build -t comp0022_fastapi -f Dockerfile ./backend
    docker swarm init
    ./deploy.sh
    ```
