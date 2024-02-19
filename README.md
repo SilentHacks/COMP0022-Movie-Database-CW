@@ -20,7 +20,10 @@ The project is built using the following technologies:
 
 - **Backend API**: [FastAPI](https://fastapi.tiangolo.com/) - A modern, fast (high-performance) web framework for building APIs with Python 3.7+ based on standard Python type hints. FastAPI allows for easy setup of RESTful APIs with automatic interactive API documentation and is known for its high performance.
 
-- **Frontend**: [Next.js](https://nextjs.org/) - An open-source React front-end development web framework that enables functionality such as server-side rendering and generating static websites for React-based web applications. It provides an excellent developer experience with features like fast refresh and built-in CSS support.
+- **Frontend**: 
+  - [Next.js](https://nextjs.org/) - An open-source React front-end development web framework that enables functionality such as server-side rendering and generating static websites for React-based web applications. It provides an excellent developer experience with features like fast refresh and built-in CSS support.
+  - [Tailwind CSS](https://tailwindcss.com/) - A utility-first CSS framework that provides low-level utility classes to build custom designs without having to leave your HTML. It's a great choice for rapid prototyping and building custom designs.
+  - [Nginx](https://www.nginx.com/) - A web server that can also be used as a reverse proxy, load balancer, mail proxy, and HTTP cache. It's used to serve the Next.js application after building it as a static site.
 
 - **Database**: [PostgreSQL](https://www.postgresql.org/) - A powerful, open-source object-relational database system that uses and extends the SQL language combined with many features that safely store and scale the most complicated data workloads.
 
