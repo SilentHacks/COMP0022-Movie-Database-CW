@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  locust-master:
+    image: locustio/locust
+    network_mode: host
+    volumes:
+      - ./locustfile.py:/mnt/locust/locustfile.py
+    command: -f /mnt/locust/locustfile.py --master
+
+  locust-worker:
+    image: locustio/locust
+    network_mode: host
+    volumes:
+      - ./locustfile.py:/mnt/locust/locustfile.py
+    command: -f /mnt/locust/locustfile.py --worker
