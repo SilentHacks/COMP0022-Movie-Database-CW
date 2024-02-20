@@ -74,9 +74,6 @@ services:
   pg-0:
     image: bitnami/postgresql-repmgr:16
     container_name: comp0022_postgres_0
-    restart: always
-    ports:
-      - "5432"
     networks:
       - internal_network
     volumes:
@@ -85,7 +82,7 @@ services:
     environment:
       - POSTGRESQL_PGAUDIT_LOG=READ,WRITE
       - POSTGRESQL_LOG_HOSTNAME=true
-      - POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME}
+#      - POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME}  # Bitnami image uses POSTGRESQL_USERNAME=postgres
       - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
       - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
       - REPMGR_PRIMARY_HOST=pg-0
@@ -99,8 +96,6 @@ services:
     image: bitnami/postgresql-repmgr:16
     container_name: comp0022_postgres_1
     restart: always
-    ports:
-      - "5432"
     networks:
       - internal_network
     depends_on:
@@ -128,7 +123,7 @@ services:
       - pg-1
     environment:
       - PGPOOL_BACKEND_NODES=0:pg-0:5432:4:primary:ALWAYS_PRIMARY,1:pg-1:5432:6:replica
-      - PGPOOL_POSTGRES_USERNAME=${POSTGRESQL_USER}
+#      - PGPOOL_POSTGRES_USERNAME=${POSTGRESQL_USER}  # Breaks if you set this
       - PGPOOL_POSTGRES_PASSWORD=${POSTGRESQL_PASSWORD}
       - PGPOOL_ADMIN_USERNAME=${PGPOOL_ADMIN_USERNAME}
       - PGPOOL_ADMIN_PASSWORD=${PGPOOL_ADMIN_PASSWORD}

@@ -20,11 +20,16 @@ The project is built using the following technologies:
 
 - **Backend API**: [FastAPI](https://fastapi.tiangolo.com/) - A modern, fast (high-performance) web framework for building APIs with Python 3.7+ based on standard Python type hints. FastAPI allows for easy setup of RESTful APIs with automatic interactive API documentation and is known for its high performance.
 
-- **Frontend**: [Next.js](https://nextjs.org/) - An open-source React front-end development web framework that enables functionality such as server-side rendering and generating static websites for React-based web applications. It provides an excellent developer experience with features like fast refresh and built-in CSS support.
+- **Frontend**: 
+  - [Next.js](https://nextjs.org/) - An open-source React front-end development web framework that enables functionality such as server-side rendering and generating static websites for React-based web applications. It provides an excellent developer experience with features like fast refresh and built-in CSS support.
+  - [Tailwind CSS](https://tailwindcss.com/) - A utility-first CSS framework that provides low-level utility classes to build custom designs without having to leave your HTML. It's a great choice for rapid prototyping and building custom designs.
+  - [Nginx](https://www.nginx.com/) - A web server that can also be used as a reverse proxy, load balancer, mail proxy, and HTTP cache. It's used to serve the Next.js application after building it as a static site.
 
 - **Database**: [PostgreSQL](https://www.postgresql.org/) - A powerful, open-source object-relational database system that uses and extends the SQL language combined with many features that safely store and scale the most complicated data workloads.
 
 - **Load Balancer/Reverse Proxy**: [Traefik](https://traefik.io/traefik/) - A modern HTTP reverse proxy and load balancer made to deploy microservices with ease. It simplifies networking complexity and configurations with automatic service discovery and dynamic configuration capabilities.
+
+- **Monitoring and Analytics**: [Node Exporter](https://github.com/prometheus/node_exporter), [cAdvisor](https://github.com/google/cadvisor), [Prometheus](https://prometheus.io/), [Grafana](https://grafana.com/) - These tools are used for monitoring and analytics, providing insights into the application's performance, resource usage, and other metrics.
 
 - **Caching Layer**: [Redis](https://redis.io/) - An open-source (BSD licensed), in-memory data structure store, used as a database, cache, and message broker. Redis supports data structures such as strings, hashes, lists, sets, and much more.
 
@@ -46,11 +51,15 @@ This project is organised into distinct directories and utilises Docker for cont
   - **`/scripts`**: Contains SQL initialisation scripts essential for setting up the PostgreSQL database schema and initial datasets. These scripts automate the database preparation process, ensuring a ready-to-use database environment for the application.
   - **Migration Scripts (Planned)**: Anticipated to include migration scripts for managing database schema evolution and updates as the project develops.
 
+- **`/configs`**: This directory houses the configuration files for various services and components used in the application stack, including:
+  - **`/traefik`**: Contains the configuration files for the Traefik reverse proxy/load balancer, including the dynamic configuration file and SSL certificates for HTTPS support.
+  - **`/grafana`**: Houses the configuration files for the Grafana dashboard, including the provisioning files for setting up data sources and dashboards.
+
 ### Root Directory Contents
 
 - **`.env`**: Hosts environment variables critical for configuring the entire application stack, including database connections, external API keys, and other configuration details necessary for local development and production environments. This file is not committed and you should create your own `.env` file based on the `.env.example` file.
 
-- **`docker-compose.yml`**: Defines and configures the application's services, networks, and volumes, facilitating the orchestration of the multi-container Docker application. This includes the setup for the backend, frontend, database, and all other services like Redis or Traefik.
+- **`docker-compose.dev.yml`** and **`docker-compose.prod.yml`**: Defines and configures the application's services, networks, and volumes, facilitating the orchestration of the multi-container Docker application. This includes the setup for the backend, frontend, database, and all other services like Redis or Traefik.
 
 - **Git Configuration and Documentation**: The root also contains Git-related files (e.g., `.gitignore`, `.gitmodules`) and project documentation, including this README.md.
 
@@ -81,6 +90,7 @@ This section outlines the steps to get the project up and running on your local 
 3. **Set up environment variables**:
    - Create a `.env` file in the root directory based on the `.env.example` file.
    - Update the environment variables in the `.env` file to match your local environment.
+   - You'll need to use the command `htpasswd -nbB "TRAEFIK_DASHBOARD_USERNAME" "TRAEFIK_DASHBOARD_PASSWORD" | cut -d ":" -f 2` to generate a password hash for the Traefik dashboard.
 
 4. **Set up SSL certificates** (Optional):
     - If you want to use HTTPS locally, you can generate SSL certificates using mkcert. Run the following commands to generate the certificates:
@@ -90,18 +100,28 @@ This section outlines the steps to get the project up and running on your local 
       mkcert -key-file ./localhost.key -cert-file ./localhost.crt localhost
       ```
 
-5**Start the application** using Docker Compose:
+5. **Start the application** using Docker Compose:
    ```bash
-   docker-compose up --build
+   docker compose -f docker-compose.dev.yml up --build -d
    ```
    This command will build and start the application stack, including the backend, frontend, database, and other services.
+    
+6. If you want to run it in **production mode**:
+   ```bash
+   docker build -t comp0022_next_app -f prod.Dockerfile ./frontend
+   docker build -t comp0022_fastapi -f Dockerfile ./backend
+   docker swarm init
+   ./deploy.sh
+   ```
+   This will deploy the application stack in production mode using Docker Swarm. You can bring it down using `./down.sh`.
 
 ### Usage
 
 Once the application stack is up and running, you can access the following services:
 
-- **Backend API**: Accessible at `http://localhost:8000/docs` for the interactive API documentation.
-- **Frontend**: Accessible at `http://localhost:3000` for the Next.js application.
-- **Database**: Accessible at `http://localhost:5432` for the PostgreSQL database.
+- **Backend API**: Accessible at `https://localhost:8000/docs` for the interactive API documentation.
+- **Frontend**: Accessible at `https://localhost:3000` for the Next.js application.
+- **Database**: Accessible at `localhost:5432` for the PostgreSQL database.
+- **Grafana Dashboard**: Accessible at `https://localhost/dashboard` for the Grafana dashboard (only available in production mode).
 - **Stop the application**: Run `docker-compose down` to stop and remove the containers.
 
