@@ -57,9 +57,6 @@ services:
       - api
     env_file:
       - .env
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
     restart: always
     labels:
       - "traefik.enable=true"
