@@ -37,8 +37,12 @@ services:
 
   api:
     image: comp0022_fastapi
-    env_file:
-      - .env
+    environment:
+      - POSTGRESQL_HOST=pgpool
+      - POSTGRESQL_PORT=5432
+      - POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME}
+      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+      - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
     command: uvicorn app.main:app --host 0.0.0.0 --proxy-headers --port 8000 --root-path /api/v1
     depends_on:
       - pg-0

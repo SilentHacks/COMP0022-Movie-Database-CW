@@ -31,8 +31,12 @@ services:
   api:
     build: ./backend
     container_name: comp0022_fastapi
-    env_file:
-      - .env
+    environment:
+      - POSTGRESQL_HOST=pgpool
+      - POSTGRESQL_PORT=5432
+      - POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME}
+      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+      - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`localhost`) && PathPrefix(`/api/v1`)"
