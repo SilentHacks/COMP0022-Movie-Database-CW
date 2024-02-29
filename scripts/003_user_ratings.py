@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 credentials = {
-    "user": "postgres",
+    "user": os.getenv('POSTGRESQL_USERNAME'),
     "password": os.getenv('POSTGRESQL_PASSWORD'),
     "database": os.getenv('POSTGRESQL_DATABASE'),
     "port": 5432
