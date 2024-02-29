@@ -26,12 +26,14 @@ def parse_movie_data():
 
     genres = {}
     people = {}
+    movie_genres_insert = []
     movies_insert = []
     movie_people_insert = []
 
     for movie in data:
         for genre in movie['genres']:
             genres[genre['id']] = genre['name']  # Doesn't matter if we overwrite, we just want the unique ones
+            movie_genres_insert.append((movie['id'], genre['id']))
 
         for actor in movie['actors']:
             people[actor['id']] = (actor['name'], actor['profile_path'])
@@ -46,11 +48,11 @@ def parse_movie_data():
                               movie['runtime'], movie['tagline'], movie['overview'], movie['poster_path'],
                               movie['backdrop_path'], movie['budget'], movie['revenue'], movie['status']))
 
-    return genres, people, movies_insert, movie_people_insert
+    return genres, people, movies_insert, movie_people_insert, movie_genres_insert
 
 
 async def populate_db():
-    genres, people, movies_insert, movie_people_insert = parse_movie_data()
+    genres, people, movies_insert, movie_people_insert, movie_genres_insert = parse_movie_data()
     genres_insert = [(genre_id, name) for genre_id, name in genres.items()]
     people_insert = [(person_id, *value) for person_id, value in people.items()]
 
@@ -59,6 +61,8 @@ async def populate_db():
         async with conn.transaction():
             await conn.executemany('INSERT INTO genres (id, name) '
                                    'VALUES ($1, $2) ON CONFLICT DO NOTHING', genres_insert)
+            await conn.executemany('INSERT INTO movie_genres (movie_id, genre_id) '
+                                   'VALUES ($1, $2) ON CONFLICT DO NOTHING', movie_genres_insert)
             await conn.executemany('INSERT INTO people (id, name, profile_path) '
                                    'VALUES ($1, $2, $3) ON CONFLICT DO NOTHING', people_insert)
             await conn.executemany('INSERT INTO movies (id, title, imdb_id, tmdb_id, release_date, runtime, tagline, '
