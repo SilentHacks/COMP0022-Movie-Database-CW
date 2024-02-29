@@ -66,8 +66,8 @@ services:
 
   web-app:
     image: comp0022_next_app
-    env_file:
-      - .env
+    environment:
+      - NEXT_PUBLIC_API_URL=https://localhost/api/v1
     networks:
       - internal_network
     deploy:
