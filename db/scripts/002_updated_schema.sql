@@ -29,7 +29,7 @@ ALTER TABLE movie_people
 ALTER TABLE movie_people
 	RENAME COLUMN role_id TO role;
 ALTER TABLE movie_people
-	ADD CONSTRAINT movie_people_role_fkey FOREIGN KEY (role) REFERENCES roles (name);
+	ADD CONSTRAINT movie_people_role_fkey FOREIGN KEY (role) REFERENCES roles (name) ON UPDATE CASCADE;
 
 -- People spend and make more money than int32 lol
 ALTER TABLE movies
