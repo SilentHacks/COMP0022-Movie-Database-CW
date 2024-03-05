@@ -25,7 +25,7 @@ ALTER TABLE people
     ALTER COLUMN id DROP IDENTITY;
 
 ALTER TABLE movie_people
-    ALTER COLUMN role_id TYPE TEXT USING role_id::TEXT,
+    ALTER COLUMN role_id TYPE TEXT USING role_id::TEXT;
 ALTER TABLE movie_people
 	RENAME COLUMN role_id TO role;
 ALTER TABLE movie_people
