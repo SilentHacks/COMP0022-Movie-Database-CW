@@ -33,13 +33,19 @@ def parse_movie_data():
     return movie_people_update
 
 
+async def batch_insert(conn, query, values, batch=1000):
+    for i in range(0, len(values), batch):
+        print(f"Inserting {i + 1} to {i + batch} of {len(values)}")
+        await conn.executemany(query, values[i:i + batch])
+
+
 async def populate_db():
     movie_people_update = parse_movie_data()
 
     pool = await db_connect()
     async with pool.acquire() as conn:
         async with conn.transaction():
-            await conn.executemany('UPDATE movie_people SET "order" = $3 WHERE movie_id = $1 AND person_id = $2',
+            await batch_insert(conn,'UPDATE movie_people SET "order" = $3 WHERE movie_id = $1 AND person_id = $2',
                                    movie_people_update)
 
     await pool.close()

@@ -36,14 +36,20 @@ def parse_movie_data():
     return keywords_insert, movie_keywords_insert
 
 
+async def batch_insert(conn, query, values, batch=1000):
+    for i in range(0, len(values), batch):
+        print(f"Inserting {i + 1} to {i + batch} of {len(values)}")
+        await conn.executemany(query, values[i:i + batch])
+
+
 async def populate_db():
     keywords_insert, movie_keywords_insert = parse_movie_data()
 
     pool = await db_connect()
     async with pool.acquire() as conn:
         async with conn.transaction():
-            await conn.executemany('INSERT INTO keywords (id, name) VALUES ($1, $2)', keywords_insert)
-            await conn.executemany('INSERT INTO movie_keywords (movie_id, keyword_id) VALUES ($1, $2)',
+            await batch_insert(conn,'INSERT INTO keywords (id, name) VALUES ($1, $2)', keywords_insert)
+            await batch_insert(conn,'INSERT INTO movie_keywords (movie_id, keyword_id) VALUES ($1, $2)',
                                    movie_keywords_insert)
 
     await pool.close()

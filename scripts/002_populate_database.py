@@ -51,6 +51,12 @@ def parse_movie_data():
     return genres, people, movies_insert, movie_people_insert, movie_genres_insert
 
 
+async def batch_insert(conn, query, values, batch=1000):
+    for i in range(0, len(values), batch):
+        print(f"Inserting {i + 1} to {i + batch} of {len(values)}")
+        await conn.executemany(query, values[i:i + batch])
+
+
 async def populate_db():
     genres, people, movies_insert, movie_people_insert, movie_genres_insert = parse_movie_data()
     genres_insert = [(genre_id, name) for genre_id, name in genres.items()]
@@ -59,17 +65,17 @@ async def populate_db():
     pool = await db_connect()
     async with pool.acquire() as conn:
         async with conn.transaction():
-            await conn.executemany('INSERT INTO movies (id, title, imdb_id, tmdb_id, release_date, runtime, tagline, '
+            await batch_insert(conn, 'INSERT INTO movies (id, title, imdb_id, tmdb_id, release_date, runtime, tagline, '
                                    'overview, poster_path, backdrop_path, budget, revenue, status) '
                                    'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) '
                                    'ON CONFLICT DO NOTHING', movies_insert)
-            await conn.executemany('INSERT INTO people (id, name, profile_path) '
+            await batch_insert(conn,'INSERT INTO people (id, name, profile_path) '
                                    'VALUES ($1, $2, $3) ON CONFLICT DO NOTHING', people_insert)
-            await conn.executemany('INSERT INTO movie_people (movie_id, person_id, role, character_name) '
+            await batch_insert(conn,'INSERT INTO movie_people (movie_id, person_id, role, character_name) '
                                    'VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING', movie_people_insert)
-            await conn.executemany('INSERT INTO genres (id, name) '
+            await batch_insert(conn,'INSERT INTO genres (id, name) '
                                    'VALUES ($1, $2) ON CONFLICT DO NOTHING', genres_insert)
-            await conn.executemany('INSERT INTO movie_genres (movie_id, genre_id) '
+            await batch_insert(conn,'INSERT INTO movie_genres (movie_id, genre_id) '
                                    'VALUES ($1, $2) ON CONFLICT DO NOTHING', movie_genres_insert)
 
     await pool.close()

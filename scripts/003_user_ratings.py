@@ -34,13 +34,19 @@ def parse_ratings():
     return users_insert, ratings_insert
 
 
+async def batch_insert(conn, query, values, batch=1000):
+    for i in range(0, len(values), batch):
+        print(f"Inserting {i + 1} to {i + batch} of {len(values)}")
+        await conn.executemany(query, values[i:i + batch])
+
+
 async def populate_db():
     users_insert, ratings_insert = parse_ratings()
 
     pool = await db_connect()
     async with pool.acquire() as conn:
         async with conn.transaction():
-            await conn.executemany('INSERT INTO users (id, openness, agreeableness, emotional_stability, '
+            await batch_insert(conn,'INSERT INTO users (id, openness, agreeableness, emotional_stability, '
                                    'conscientiousness, extraversion) VALUES ($1, $2, $3, $4, $5, $6) '
                                    'ON CONFLICT (id) DO NOTHING', users_insert)
 
@@ -51,7 +57,7 @@ async def populate_db():
             valid_movie_ids_set = {row['id'] for row in valid_movie_ids}
             valid_ratings_insert = [rating for rating in ratings_insert if rating[1] in valid_movie_ids_set]
 
-            await conn.executemany('INSERT INTO user_ratings (user_id, movie_id, rating, created_at, updated_at) '
+            await batch_insert(conn,'INSERT INTO user_ratings (user_id, movie_id, rating, created_at, updated_at) '
                                    'VALUES ($1, $2, $3, $4, $4) ON CONFLICT (user_id, movie_id) DO NOTHING',
                                    valid_ratings_insert)
 
